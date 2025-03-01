@@ -1,93 +1,75 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         Main main = new Main();
-        main.equilibriumMobile();
+        main.cheatingStudents();
     }
-    int depth = 0;
-    int nodes = 0;
-    long numberFrequency = 0;
-    long topFrequency = 0;
-    String parse;
-    public void equilibriumMobile() {
+    public void cheatingStudents() {
         Scanner scanner = new Scanner(System.in);
-        int testCases = scanner.nextInt();
-        scanner.nextLine();
-
-        for (int i = 0; i < testCases; i++) {
-            parse = scanner.nextLine();
-            HashMap<Long, Long> similarNumbers = new HashMap<>();
-            StringBuilder number = new StringBuilder();
-            depth = 0;
-            nodes = 0;
-            numberFrequency = 0;
-            topFrequency = 0;
-
-            for (int j = 0; j < parse.length(); j++) {
-                char character = parse.charAt(j);
-                if (Character.isDigit(character)) {
-                    number.append(character);
-                } else if (number.length() > 0) {
-                    long temp = Long.parseLong(number.toString());
-                    long key = temp * (long) Math.pow(2, depth);
-                    similarNumbers.put(key, similarNumbers.getOrDefault(key, 0L) + 1);
-                    nodes++;
-                    number = new StringBuilder();
-                }
-                if (character == '[') {
-                    depth++;
-                } else if (character == ']') {
-                    depth--;
-                }
-            }
-            if (number.length() > 0) {
-                long temp = Long.parseLong(number.toString());
-                long key = temp * (long) Math.pow(2, depth);
-                similarNumbers.put(key, similarNumbers.getOrDefault(key, 0L) + 1);
-                nodes++;
-            }
-            List<Map.Entry<Long,Long>> similarNumbersList = new ArrayList<>(similarNumbers.entrySet());
-            for (int j = 0; j < similarNumbers.size(); j++) {
-                if (similarNumbersList.get(j).getValue() > numberFrequency) {
-                    numberFrequency = similarNumbersList.get(j).getValue();
-                    topFrequency = similarNumbersList.get(j).getKey();
-                }
-            }
-            System.out.println(nodes - numberFrequency);
+        int N = scanner.nextInt();
+        int[][] coordinates = new int [N][2];
+        for (int i = 0; i < N; i++) {
+            coordinates[i][0] = scanner.nextInt();
+            coordinates[i][1] = scanner.nextInt();
         }
+        buildGraph(coordinates);
+        int total = (2*primMST(buildGraph(coordinates), N));
+        System.out.println(total);
+
     }
+    private int manhattanDistance(int[] a, int[] b) {
+        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+    }
+    public List<List<Edge>> buildGraph(int[][] coordinates) {
+        int N = coordinates.length;
+        List<List<Edge>> graph = new ArrayList<>();
 
-    class Node{
-        private int weight;
-        private boolean isJunction = true;
-        private Node parent;
-        public List<Node> children = new ArrayList<>();
-
-        private int costOfChange = 1;
-        public boolean isRoot = false;
-        public int level;
-
-        public Node(){
+        for (int i = 0; i < N ; i++) {
+            graph.add(new ArrayList<>());
         }
+        for (int i = 0; i < N ; i++) {
+            for (int j = i + 1 ; j < N ; j++) {
+                int weight = manhattanDistance(coordinates[i], coordinates[j]);
+                graph.get(i).add(new Edge(j, weight));
+                graph.get(j).add(new Edge(i, weight));
+            }
+        }
+        return graph;
+    }
+    public int primMST(List<List<Edge>> graph, int nbrOfVertices){
+        boolean[] visited = new boolean[nbrOfVertices];
+        PriorityQueue<Edge> pq = new PriorityQueue<>((a, b) -> a.weight - b.weight);
+        int total = 0;
+        pq.add(new Edge(0, 0));
+        while (!pq.isEmpty()) {
+            Edge current = pq.poll();
+            int node = current.target;
 
-        public Node setWeight(int weight){
+            if (visited[node]) {
+                continue;
+            }
+            visited[node] = true;
+            total += current.weight;
+
+            for (Edge edge : graph.get(node)) {
+                if (!visited[edge.target]) {
+                    pq.add(edge);
+                }
+            }
+        }
+        return total;
+    }
+    class Edge {
+        int target;
+        int weight;
+
+        Edge(int target, int weight) {
+            this.target = target;
             this.weight = weight;
-            isJunction = false;
-            return this;
-        }
-
-        public Node setParent(Node parent) {
-            this.parent = parent;
-            return this;
-        }
-
-        public void addChild(Node child) {
-            children.add(child);
-        }
-
-        public String toString(){
-            return isJunction ? "─┐" : "" + weight;
         }
     }
 }
